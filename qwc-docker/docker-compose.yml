@@ -1,0 +1,267 @@
+
+x-qwc-service-variables: &qwc-service-variables
+# Each service need to validate the authentication, so this secret is needed by
+  JWT_SECRET_KEY: $JWT_SECRET_KEY
+  JWT_COOKIE_CSRF_PROTECT: 'True'
+  JWT_COOKIE_SAMESITE: 'Strict'
+  # Uncomment if the application is exclusively run over HTTPS to ensure cookies are only sent with HTTPS requests
+  # JWT_COOKIE_SECURE: 'True'
+  # Set these to override the UID/GID which runs uwsgi. Useful to ensure uwsgi runs under the same user/group
+  # which owns the shared volumes on host, avoiding the need to change the ownership/permissions of those files/folders.
+  SERVICE_UID: 1000
+  SERVICE_GID: 1000
+  # Uncomment this for multi-tenant support, see also api-gateway/nginx-example-multitenant.conf
+  # TENANT_HEADER: Tenant
+
+services:
+
+  qwc-postgis:
+    image: sourcepole/qwc-base-db:18 # 16 refers to the Postgres major version
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: 'test' # TODO: Set your postgres password here!
+    volumes:
+      - postgis:/var/lib/postgresql/docker
+      # NOTE: Remove this line if you don't want/need the demo data
+      # - ./volumes/demo-data/setup-demo-data.sh:/docker-entrypoint-initdb.d/2_setup-demo-data.sh
+    # ports:
+    #  - "127.0.0.1:5439:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+
+  qwc-config-db-migrate:
+    image: sourcepole/qwc-base-db-migrate:latest-2026-lts
+    restart: no
+    volumes:
+      - ./pg_service.conf:/tmp/pg_service.conf:ro
+      # NOTE: Remove this line if you don't want/need the demo data
+      # - ./volumes/demo-data/setup-demo-data-permissions.sh:/tmp/extra-init.d/setup-demo-data-permissions.sh
+
+  qwc-qgis-server:
+    image: sourcepole/qwc-qgis-server:3.40
+    restart: unless-stopped
+    # ports:
+    #   - "127.0.0.1:8001:80"
+    environment:
+      # QGIS_SERVER_LOG_LEVEL: 0
+      # LOCALE: 'de_DE'
+      # QGIS_SERVER_IGNORE_BAD_LAYERS: 1
+      FCGID_EXTRA_ENV: 'PRINT_LAYOUT_DIR'
+      PRINT_LAYOUT_DIR: '/layouts'
+    volumes:
+      - ../data:/data
+      - ./pg_service.conf:/etc/postgresql-common/pg_service.conf:ro
+      - ./volumes/qgis-server-plugins/print_templates:/usr/share/qgis/python/plugins/print_templates:ro
+      - ./volumes/qgis-server-plugins/split_categorized:/usr/share/qgis/python/plugins/split_categorized:ro
+      - ./volumes/qgis-server-plugins/filter_geom:/usr/share/qgis/python/plugins/filter_geom:ro
+      - ./volumes/qgis-server-plugins/clear_capabilities:/usr/share/qgis/python/plugins/clear_capabilities:ro
+      - ./volumes/print-layouts:/layouts:ro
+
+  qwc-config-service:
+    image: sourcepole/qwc-config-generator:latest-2026-lts
+    restart: unless-stopped
+    environment:
+      <<: *qwc-service-variables
+      INPUT_CONFIG_PATH: '/srv/qwc_service/config-in'
+      OUTPUT_CONFIG_PATH: '/srv/qwc_service/config-out'
+      GENERATE_DYNAMIC_KVRELS: 1
+    # ports:
+    #   - "127.0.0.1:5010:9090"
+    volumes:
+      - ./volumes/config-in:/srv/qwc_service/config-in:ro
+      - ./volumes/config:/srv/qwc_service/config-out
+      - ./volumes/qwc2:/qwc2
+      - ../data:/data
+      - ./pg_service.conf:/srv/pg_service.conf:ro
+
+  qwc-admin-gui:
+    image: sourcepole/qwc-admin-gui:latest-2026-lts
+    restart: unless-stopped
+    environment:
+      <<: *qwc-service-variables
+      # Don't enable JWT CSRF protection for admin gui, it conflicts with CSRF protection offered by Flask-WTF
+      JWT_COOKIE_CSRF_PROTECT: 'False'
+      # When setting user info fields, make sure to create corresponding columns (i.e. "surname", "first_name", "street", etc) in qwc_config.user_infos
+      # USER_INFO_FIELDS: '[{"title": "Surname", "name": "surname", "type": "text", "required": true}, {"title": "First name", "name": "first_name", "type": "text", "required": true}, {"title": "Street", "name": "street", "type": "text"}, {"title": "ZIP", "name": "zip", "type": "text"}, {"title": "City", "name": "city", "type": "text"}]'
+      #TOTP_ENABLED: 'False'
+      GROUP_REGISTRATION_ENABLED: 'True'
+      #IDLE_TIMEOUT: 600
+      DEFAULT_LOCALE: 'en'
+      MAIL_SUPPRESS_SEND: 'True'
+      MAIL_DEFAULT_SENDER: 'from@example.com'
+    volumes:
+      - ./pg_service.conf:/srv/pg_service.conf:ro
+      - ./volumes/config:/srv/qwc_service/config:ro
+      # required by themes plugin:
+      # - ./volumes/config-in:/srv/qwc_service/config-in:rw
+      # - ./volumes/qwc2:/qwc2
+      # - ../data:/qgs-resources
+      # - ./volumes/info-templates:/info_templates
+
+  qwc-auth-service:
+    image: sourcepole/qwc-db-auth:latest-2026-lts
+    restart: unless-stopped
+    environment:
+      <<: *qwc-service-variables
+      SERVICE_MOUNTPOINT: '/auth'
+      # Enable the following in production (requires https):
+      #JWT_COOKIE_SECURE: 'True'
+      #TOTP_ENABLED: 'False'
+      #TOTP_ISSUER_NAME: 'QWC Services'
+      # MAIL_SUPPRESS_SEND: 'False'
+      # MAIL_DEFAULT_SENDER: 'info@example.com'
+      # MAIL_SERVER: 'mail.example.com'
+      # MAIL_PORT: '465'
+      # MAIL_USERNAME: 'info@example.com'
+      # MAIL_PASSWORD: 'password1234'
+      # MAIL_USE_SSL: 'True'
+    volumes:
+      - ./pg_service.conf:/srv/pg_service.conf:ro
+      - ./volumes/config:/srv/qwc_service/config:ro
+
+
+  qwc-feature-info-service:
+    image: sourcepole/qwc-feature-info-service:latest-2026-lts
+    restart: unless-stopped
+    environment:
+      <<: *qwc-service-variables
+      SERVICE_MOUNTPOINT: '/api/v1/featureinfo'
+    volumes:
+      - ./pg_service.conf:/srv/pg_service.conf:ro
+      - ./volumes/config:/srv/qwc_service/config:ro
+      - ./volumes/info-templates:/info_templates:ro
+
+
+  qwc-legend-service:
+    image: sourcepole/qwc-legend-service:latest-2026-lts
+    restart: unless-stopped
+    environment:
+      <<: *qwc-service-variables
+      SERVICE_MOUNTPOINT: '/api/v1/legend'
+    volumes:
+      - ./volumes/config:/srv/qwc_service/config:ro
+      - ./volumes/legends:/legends
+
+
+  qwc-map-viewer:
+    build: ../qwc-custom
+    restart: unless-stopped
+    # Stock qwc2 app
+    # image: sourcepole/qwc-map-viewer:latest-2026-lts
+    # Or with own viewer build placed in volumes/qwc2
+    # image: sourcepole/qwc-map-viewer-base:latest-2026-lts
+    environment:
+      <<: *qwc-service-variables
+      SERVICE_MOUNTPOINT: '/'
+    volumes:
+      - ./pg_service.conf:/srv/pg_service.conf:ro
+      - ./volumes/config:/srv/qwc_service/config:ro
+      # When using qwc-map-viewer:
+      # - ./volumes/qwc2/assets:/qwc2/assets:ro
+      # When using own viewer build with qwc-map-viewer-base:
+      # - ./volumes/qwc2:/qwc2:ro
+
+  qwc-ogc-service:
+    image: sourcepole/qwc-ogc-service:latest-2026-lts
+    restart: unless-stopped
+    environment:
+      <<: *qwc-service-variables
+      SERVICE_MOUNTPOINT: '/ows'
+    volumes:
+      - ./volumes/config:/srv/qwc_service/config:ro
+
+
+  pygeoapi-service:
+    build: ../pygeoapi
+    restart: unless-stopped
+    environment:
+      <<: *qwc-service-variables
+      PYTHONUNBUFFERED: "1"
+      PYGEOAPI_CONFIG: /app/pygeoapi-config.yml
+      PYGEOAPI_OPENAPI: /app/pygeoapi-openapi.yml
+    volumes:
+      - ../data:/data
+      - ./volumes/pygeoapi_workdir:/tmp/pygeoapi-process-outputs
+    develop:
+      watch:
+        - action: rebuild
+          path: ../pygeoapi
+          ignore:
+            - venv/
+            - __pycache__/
+
+  # qwc-api-gateway:
+  #   image: nginx:1.29
+  #   ports:
+  #   #   # NOTE: The port the qwc application runs on. You can choose another port instead of 8088.
+  #     - "8088:80"
+  #   volumes:
+  #     - ./api-gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  #   depends_on:
+  #     - pygeoapi-service
+  #     - qwc-postgis
+  #     - qwc-qgis-server
+  #     - qwc-config-service
+  #     - qwc-admin-gui
+  #     - qwc-auth-service
+  #     - qwc-feature-info-service
+  #     - qwc-legend-service
+  #     - qwc-map-viewer
+  #     - qwc-ogc-service
+
+  dex:
+    image: ghcr.io/dexidp/dex:v2.45.1
+    restart: unless-stopped
+    ports:
+      - "5556:5556"
+    environment:
+      DEX_CLIENT_SECRET: ${DEX_CLIENT_SECRET}
+      DEX_ADMIN_PASSWORD_HASH: ${DEX_ADMIN_PASSWORD_HASH}
+    volumes:
+      - ./volumes/dex/config.yml:/etc/dex/config.yml:ro
+    command: ["dex", "serve", "/etc/dex/config.yml"]
+
+  auth-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.3
+    ports:
+      - 8088:4180
+    depends_on:
+      - dex
+    restart: unless-stopped
+    extra_hosts:
+      # Allow server-side OIDC calls (discovery, token exchange, JWKS) to reach Dex
+      # via the published port on the host. Dex issuer is http://localhost:5556 so
+      # all discovery endpoints advertise localhost; this makes them reachable inside
+      # the auth-proxy container.
+      - "localhost:host-gateway"
+    command:
+      - --http-address=0.0.0.0:4180
+      - --skip-provider-button=true
+      - --provider=oidc
+      - --scope=openid email profile
+      - --email-domain=*
+      - --cookie-secret=${OAUTH_COOKIE_SECRET}
+      - --client-id=oauth2-proxy
+      - --client-secret=${DEX_CLIENT_SECRET}
+      - --redirect-url=http://localhost:8088/oauth2/callback
+      - --oidc-issuer-url=http://localhost:5556
+      - --insecure-oidc-allow-unverified-email=true
+      - --upstream=http://qwc-feature-info-service:9090/api/v1/featureinfo/
+      - --upstream=http://qwc-legend-service:9090/api/v1/legend/
+      - --upstream=http://qwc-admin-gui:9090/qwc_admin/
+      - --upstream=http://qwc-auth-service:9090/auth/
+      - --upstream=http://qwc-ogc-service:9090/ows/
+      - --upstream=http://pygeoapi-service:5000/processes/
+      - --upstream=http://pygeoapi-service:5000/processes
+      - --upstream=http://pygeoapi-service:5000/jobs/
+      - --upstream=http://pygeoapi-service:5000/jobs
+      - --upstream=http://pygeoapi-service:5000/openapi/
+      - --upstream=http://pygeoapi-service:5000/openapi
+      - --upstream=http://qwc-map-viewer:9090/
+      - --cookie-refresh=0
+      - --session-cookie-minimal=true
+
+volumes:
+  pygeoapi_workdir:
+  postgis:

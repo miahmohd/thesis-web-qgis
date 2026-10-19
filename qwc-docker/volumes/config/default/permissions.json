@@ -1,0 +1,297 @@
+{
+  "$schema": "https://github.com/qwc-services/qwc-services-core/raw/2026-lts/schemas/qwc-services-permissions.json",
+  "users": [
+    {
+      "name": "admin",
+      "groups": [],
+      "roles": [
+        "admin"
+      ]
+    }
+  ],
+  "groups": [],
+  "roles": [
+    {
+      "role": "public",
+      "permissions": {
+        "wms_services": [
+          {
+            "name": "scan/lmb_grids",
+            "layers": [
+              {
+                "name": "LMB Grids",
+                "queryable": true,
+                "info_template": true
+              },
+              {
+                "name": "LMB2C_count_weekend",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "LMB2C_IDcu",
+                  "LMB2C_IDna",
+                  "evt_count",
+                  "avg_resp_s",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "LMB3A_avg_res_weekday",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "LMB3A_IDcu",
+                  "LMB3A_area",
+                  "POP_2018",
+                  "evt_count",
+                  "avg_resp_s",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "Test",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "LMB3B_IDna",
+                  "LMB3B_IDcu",
+                  "evt_count",
+                  "avg_resp_s",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "lmb5a",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "LMB5A_IDis",
+                  "LMB5A_IDna",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "osm_bg"
+              },
+              {
+                "name": "esri_imagery_bg"
+              }
+            ]
+          },
+          {
+            "name": "scan/lmb_grids_gpkg",
+            "layers": [
+              {
+                "name": "LMB Grids (GPKG)",
+                "queryable": true,
+                "info_template": true
+              },
+              {
+                "name": "B3B_30_30",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "fid",
+                  "evt_count",
+                  "window_start",
+                  "window_end",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "lmb5a",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "fid",
+                  "LMB5A_IDis",
+                  "LMB5A_IDna",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "lmb4b",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "fid",
+                  "LMB4B_IDna",
+                  "LMB4B_IDcu",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "lmb4a",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "fid",
+                  "LMB4A_IDis",
+                  "LMB4A_IDna",
+                  "LMB4A_IDtg",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "lmb3b",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "fid",
+                  "LMB3B_IDna",
+                  "LMB3B_IDcu",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "lmb3a",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "fid",
+                  "LMB3A_IDcu",
+                  "LMB3A_area",
+                  "POP_2018",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "lmb2c",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "fid",
+                  "LMB2C_IDcu",
+                  "LMB2C_IDna",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "lmb2b",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "fid",
+                  "LMB2B_IDis",
+                  "LMB2B_IDna",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "lmb2a",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "fid",
+                  "LMB2A_IDis",
+                  "LMB2A_IDna",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "lmb1c",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "fid",
+                  "LMB1C_IDcu",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "lmb1b",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "fid",
+                  "LMB1B_IDcu",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "lmb1a",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "fid",
+                  "LMB1A_IDcu",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "lmb0a",
+                "queryable": true,
+                "info_template": true,
+                "attributes": [
+                  "fid",
+                  "LMB0A_IDcu",
+                  "geometry",
+                  "maptip"
+                ]
+              },
+              {
+                "name": "osm_bg"
+              },
+              {
+                "name": "esri_imagery_bg"
+              }
+            ]
+          }
+        ],
+        "wfs_services": [],
+        "background_layers": [
+          "esri_imagery",
+          "mapnik",
+          "bluemarble"
+        ],
+        "data_datasets": [],
+        "viewer_tasks": [],
+        "theme_info_links": [],
+        "plugin_data": [],
+        "dataproducts": [],
+        "document_templates": [],
+        "print_templates": [],
+        "solr_facets": [],
+        "external_links": [],
+        "viewer_assets": [],
+        "oblique_image_datasets": []
+      }
+    },
+    {
+      "role": "admin",
+      "permissions": {
+        "wms_services": [],
+        "wfs_services": [],
+        "background_layers": [],
+        "data_datasets": [],
+        "viewer_tasks": [],
+        "theme_info_links": [],
+        "plugin_data": [],
+        "dataproducts": [],
+        "document_templates": [],
+        "print_templates": [],
+        "solr_facets": [],
+        "external_links": [],
+        "viewer_assets": [],
+        "oblique_image_datasets": []
+      }
+    }
+  ],
+  "permissions_default_allow": true
+}

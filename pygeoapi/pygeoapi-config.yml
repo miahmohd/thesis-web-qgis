@@ -1,0 +1,62 @@
+server:
+  bind:
+    host: 0.0.0.0
+    port: 5000
+  url: http://localhost:8088
+  mimetype: application/json; charset=UTF-8
+  encoding: utf-8
+  gzip: false
+  languages:
+    - en-US
+  cors: true
+  map:
+    url: https://tile.openstreetmap.org/{z}/{x}/{y}.png
+    attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+  manager:
+    name: TinyDB
+    connection: /tmp/pygeoapi-process-manager.db
+    output_dir: /tmp/pygeoapi-process-outputs
+  limits:
+    default_items: 10
+    max_items: 10
+
+logging:
+  level: INFO
+
+metadata:
+  identification:
+    title: LMB Geoprocessing API
+    description: OGC API - Processes server for LMB grid geoprocessing
+    keywords:
+      - geospatial
+      - geoprocessing
+      - LMB
+      - OGC API
+    keywords_type: theme
+    terms_of_service: null
+    url: http://localhost:8088
+  license:
+    name: CC-BY 4.0 license
+    url: https://creativecommons.org/licenses/by/4.0/
+  provider:
+    name: Polimi
+    url: https://www.polimi.it
+  contact:
+    name: Miah Mohd
+
+resources:
+  lmb-grid-statistics:
+    type: process
+    processor:
+      name: processes.lmb_grid_statistics.LmbGridStatisticsProcessor
+
+  lmb-sliding-window:
+    type: process
+    processor:
+      name: processes.lmb_sliding_window.LmbSlidingWindowProcessor
+
+
+  chart-statistics:
+    type: process
+    processor:
+      name: processes.chart_statistics.ChartStatisticsProcessor
